@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmolBean</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .game-container {
+            background: #fff;
+            border-radius: 30px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 28px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            background: #f0f0f0;
+            padding: 12px;
+            border-radius: 15px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-bar {
+            background: #ddd;
+            height: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-fill {
+            height: 100%;
+            transition: width 0.3s, background-color 0.3s;
+            border-radius: 10px;
+        }
+
+        .hunger-fill { background: linear-gradient(90deg, #ff6b6b, #ff8787); }
+        .happiness-fill { background: linear-gradient(90deg, #ffd93d, #ffed4e); }
+        .energy-fill { background: linear-gradient(90deg, #6bcf7f, #8ee99f); }
+        .hygiene-fill { background: linear-gradient(90deg, #4ecdc4, #6ee7df); }
+
+        .pet-display {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            min-height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pet-container {
+            position: relative;
+            animation: float 3s ease-in-out infinite;
+            margin: 20px 0;
+        }
+
+        .pet-image {
+            width: 180px;
+            height: 180px;
+            transition: all 0.3s;
+        }
+
+        .pet-container.sad .pet-image {
+            filter: grayscale(30%);
+        }
+
+        .pet-container.tired .pet-image {
+            opacity: 0.7;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .outfit {
+            position: absolute;
+            font-size: 70px;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
+        }
+
+        .poop {
+            font-size: 40px;
+            position: absolute;
+            animation: poop-appear 0.3s;
+        }
+
+        @keyframes poop-appear {
+            0% { transform: scale(0) rotate(0deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+
+        .status-message {
+            font-size: 16px;
+            color: #666;
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 20px;
+            border-radius: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .outfit-selector {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .outfit-btn {
+            font-size: 40px;
+            padding: 10px 20px;
+            background: #f0f0f0;
+            border: 3px solid transparent;
+        }
+
+        .outfit-btn.active {
+            border-color: #667eea;
+            background: white;
+        }
+
+        .game-over {
+            text-align: center;
+            color: #ff6b6b;
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .reset-btn {
+            grid-column: 1 / -1;
+            background: linear-gradient(135deg, #ff6b6b 0%, #ff8787 100%);
+        }
+
+        .dead .pet-image {
+            filter: grayscale(100%);
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🫘 SmolBean 🫘</h1>
+        
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-label">Hunger 🍔</div>
+                <div class="stat-bar">
+                    <div class="stat-fill hunger-fill" id="hungerBar"></div>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Happiness 😊</div>
+                <div class="stat-bar">
+                    <div class="stat-fill happiness-fill" id="happinessBar"></div>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Energy ⚡</div>
+                <div class="stat-bar">
+                    <div class="stat-fill energy-fill" id="energyBar"></div>
+                </div>
+            </div>
+            <div class="stat">
+                <div class="stat-label">Hygiene 🧼</div>
+                <div class="stat-bar">
+                    <div class="stat-fill hygiene-fill" id="hygieneBar"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="pet-display" id="petDisplay"></div>
+
+        <div class="actions" id="actions">
+            <button onclick="feed()">🍔 Feed</button>
+            <button onclick="play()">🎮 Play</button>
+            <button onclick="walk()">🚶 Walk</button>
+            <button onclick="sleep()">😴 Sleep</button>
+            <button onclick="clean()">🧹 Clean</button>
+            <button onclick="toggleOutfits()">👔 Dress Up</button>
+        </div>
+
+        <div class="outfit-selector" id="outfitSelector" style="display: none;">
+            <button class="outfit-btn active" onclick="changeOutfit('', 0)">🫘</button>
+            <button class="outfit-btn" onclick="changeOutfit('🎩', 1)">🎩</button>
+            <button class="outfit-btn" onclick="changeOutfit('👑', 2)">👑</button>
+            <button class="outfit-btn" onclick="changeOutfit('🎀', 3)">🎀</button>
+        </div>
+    </div>
+
+    <script>
+        const beanSVG = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 400'%3E%3Cdefs%3E%3CradialGradient id='grad1' cx='50%25' cy='40%25'%3E%3Cstop offset='0%25' style='stop-color:%2395d9ea;stop-opacity:1' /%3E%3Cstop offset='100%25' style='stop-color:%235dade2;stop-opacity:1' /%3E%3C/radialGradient%3E%3C/defs%3E%3Cellipse cx='200' cy='180' rx='140' ry='90' fill='url(%23grad1)' transform='rotate(-15 200 180)'/%3E%3Cellipse cx='200' cy='240' rx='120' ry='80' fill='url(%23grad1)' transform='rotate(10 200 240)'/%3E%3Ccircle cx='165' cy='180' r='12' fill='%23222'/%3E%3Ccircle cx='235' cy='180' r='12' fill='%23222'/%3E%3Cpath d='M 175 210 Q 200 225 225 210' stroke='%23222' stroke-width='5' fill='none' stroke-linecap='round'/%3E%3Cellipse cx='168' cy='175' rx='4' ry='6' fill='white' opacity='0.8'/%3E%3Cellipse cx='238' cy='175' rx='4' ry='6' fill='white' opacity='0.8'/%3E%3C/svg%3E`;
+
+        let pet = {
+            hunger: 100,
+            happiness: 100,
+            energy: 100,
+            hygiene: 100,
+            alive: true,
+            outfit: '',
+            mood: 'happy'
+        };
+
+        let poops = [];
+        let gameInterval;
+        let currentOutfit = 0;
+
+        function init() {
+            renderPet();
+            updateDisplay();
+            gameInterval = setInterval(updatePet, 3000);
+        }
+
+        function updatePet() {
+            if (!pet.alive) return;
+
+            pet.hunger = Math.max(0, pet.hunger - 2);
+            pet.happiness = Math.max(0, pet.happiness - 1);
+            pet.energy = Math.max(0, pet.energy - 1);
+            pet.hygiene = Math.max(0, pet.hygiene - 1);
+
+            if (Math.random() < 0.15 && poops.length < 5) {
+                addPoop();
+            }
+
+            updateMood();
+            checkDeath();
+            updateDisplay();
+            renderPet();
+        }
+
+        function updateMood() {
+            if (pet.happiness < 30) pet.mood = 'sad';
+            else if (pet.energy < 30) pet.mood = 'tired';
+            else if (pet.hunger < 30) pet.mood = 'hungry';
+            else if (pet.happiness > 70 && pet.energy > 70) pet.mood = 'happy';
+        }
+
+        function feed() {
+            if (!pet.alive) return;
+            pet.hunger = Math.min(100, pet.hunger + 30);
+            pet.happiness = Math.min(100, pet.happiness + 5);
+            showMessage("Yum! 😋");
+            updateDisplay();
+        }
+
+        function play() {
+            if (!pet.alive) return;
+            if (pet.energy < 20) {
+                showMessage("Too tired to play! 😴");
+                return;
+            }
+            pet.happiness = Math.min(100, pet.happiness + 25);
+            pet.energy = Math.max(0, pet.energy - 15);
+            pet.hunger = Math.max(0, pet.hunger - 10);
+            showMessage("Wheee! So fun! 🎉");
+            updateDisplay();
+        }
+
+        function walk() {
+            if (!pet.alive) return;
+            if (pet.energy < 15) {
+                showMessage("Too tired to walk! 😴");
+                return;
+            }
+            pet.happiness = Math.min(100, pet.happiness + 15);
+            pet.energy = Math.max(0, pet.energy - 10);
+            pet.hunger = Math.max(0, pet.hunger - 15);
+            pet.hygiene = Math.max(0, pet.hygiene - 10);
+            showMessage("Fresh air! 🌳");
+            updateDisplay();
+        }
+
+        function sleep() {
+            if (!pet.alive) return;
+            pet.energy = Math.min(100, pet.energy + 40);
+            pet.hunger = Math.max(0, pet.hunger - 10);
+            showMessage("Zzz... 💤");
+            updateDisplay();
+        }
+
+        function clean() {
+            if (!pet.alive) return;
+            if (poops.length === 0) {
+                showMessage("Everything is clean! ✨");
+                return;
+            }
+            poops = [];
+            pet.hygiene = 100;
+            pet.happiness = Math.min(100, pet.happiness + 10);
+            showMessage("So fresh and clean! ✨");
+            renderPet();
+            updateDisplay();
+        }
+
+        function addPoop() {
+            poops.push({
+                x: Math.random() * 70 + 10,
+                y: Math.random() * 50 + 30
+            });
+            pet.hygiene = Math.max(0, pet.hygiene - 15);
+            pet.happiness = Math.max(0, pet.happiness - 5);
+        }
+
+        function toggleOutfits() {
+            const selector = document.getElementById('outfitSelector');
+            selector.style.display = selector.style.display === 'none' ? 'flex' : 'none';
+        }
+
+        function changeOutfit(outfit, index) {
+            pet.outfit = outfit;
+            currentOutfit = index;
+            
+            document.querySelectorAll('.outfit-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === index);
+            });
+            
+            if (pet.alive) {
+                pet.happiness = Math.min(100, pet.happiness + 10);
+                showMessage("Looking good! 😎");
+                updateDisplay();
+            }
+            renderPet();
+        }
+
+        function checkDeath() {
+            if (pet.hunger <= 0 || pet.happiness <= 0 || pet.energy <= 0 || pet.hygiene <= 0) {
+                pet.alive = false;
+                clearInterval(gameInterval);
+                showGameOver();
+            }
+        }
+
+        function showGameOver() {
+            let cause = '';
+            if (pet.hunger <= 0) cause = 'Died from starvation 🍔';
+            else if (pet.happiness <= 0) cause = 'Died from sadness 😢';
+            else if (pet.energy <= 0) cause = 'Died from exhaustion 😴';
+            else if (pet.hygiene <= 0) cause = 'Died from disease 🦠';
+            
+            const display = document.getElementById('petDisplay');
+            display.innerHTML = `
+                <div class="game-over">
+                    <div class="pet-container dead">
+                        <img src="${beanSVG}" class="pet-image" alt="SmolBean">
+                    </div>
+                    <div style="margin-top: 20px;">Your SmolBean has died!</div>
+                    <div style="font-size: 16px; margin-top: 10px; color: #999;">${cause}</div>
+                </div>
+            `;
+            
+            const actions = document.getElementById('actions');
+            actions.innerHTML = '<button class="reset-btn" onclick="resetGame()">🔄 Start New SmolBean</button>';
+            document.getElementById('outfitSelector').style.display = 'none';
+        }
+
+        function resetGame() {
+            pet = {
+                hunger: 100,
+                happiness: 100,
+                energy: 100,
+                hygiene: 100,
+                alive: true,
+                outfit: '',
+                mood: 'happy'
+            };
+            poops = [];
+            currentOutfit = 0;
+            
+            const actions = document.getElementById('actions');
+            actions.innerHTML = `
+                <button onclick="feed()">🍔 Feed</button>
+                <button onclick="play()">🎮 Play</button>
+                <button onclick="walk()">🚶 Walk</button>
+                <button onclick="sleep()">😴 Sleep</button>
+                <button onclick="clean()">🧹 Clean</button>
+                <button onclick="toggleOutfits()">👔 Dress Up</button>
+            `;
+            
+            document.getElementById('outfitSelector').style.display = 'none';
+            document.querySelectorAll('.outfit-btn').forEach((btn, i) => {
+                btn.classList.toggle('active', i === 0);
+            });
+            
+            init();
+        }
+
+        function showMessage(msg) {
+            const statusEl = document.querySelector('.status-message');
+            if (statusEl) statusEl.textContent = msg;
+        }
+
+        function getStatusMessage() {
+            if (pet.hunger < 30) return "I'm so hungry! 🍔";
+            if (pet.happiness < 30) return "I'm sad... 😢";
+            if (pet.energy < 30) return "I'm tired... 😴";
+            if (pet.hygiene < 30) return "I need a bath! 🛁";
+            if (poops.length > 2) return "Please clean up! 💩";
+            if (pet.happiness > 80 && pet.hunger > 80) return "I'm so happy! 🎉";
+            return "I'm doing great! 😊";
+        }
+
+        function renderPet() {
+            if (!pet.alive) return;
+            
+            const display = document.getElementById('petDisplay');
+            const poopHTML = poops.map((p, i) => 
+                `<div class="poop" style="left: ${p.x}%; top: ${p.y}%;">💩</div>`
+            ).join('');
+            
+            display.innerHTML = `
+                ${poopHTML}
+                <div class="pet-container ${pet.mood}">
+                    <img src="${beanSVG}" class="pet-image" alt="SmolBean">
+                    ${pet.outfit ? `<div class="outfit">${pet.outfit}</div>` : ''}
+                </div>
+                <div class="status-message">${getStatusMessage()}</div>
+            `;
+        }
+
+        function updateDisplay() {
+            document.getElementById('hungerBar').style.width = pet.hunger + '%';
+            document.getElementById('happinessBar').style.width = pet.happiness + '%';
+            document.getElementById('energyBar').style.width = pet.energy + '%';
+            document.getElementById('hygieneBar').style.width = pet.hygiene + '%';
+        }
+
+        init();
+    </script>
+</body>
+</html>
